@@ -22,26 +22,42 @@ app.use(express.json());
 // app.use(cors());
 
 const Users = mongoose.model("Users", {
-  name: String,
+  email: { type: String, unique: true },
   username: { type: String, unique: true }, // Ensure unique usernames
   password: String,
+  confirmPassword: String,
 });
+const bcrypt = require("bcryptjs"); // Ensure bcrypt is installed
 
 app.post("/signup", async (req, res) => {
   try {
     const { email, username, password, confirmPassword } = req.body;
-    console.log(email);
+
+    // Check if username or email already exists
     const existingUsername = await Users.findOne({ username });
     const existingEmail = await Users.findOne({ email });
-    console.log(existingUsername);
+
     if (existingUsername || existingEmail) {
       return res.status(409).json({ msg: "User already exists" });
     }
 
-    const user = new Users({ email, username, password, confirmPassword });
+    // Check if password and confirmPassword match
+    if (password !== confirmPassword) {
+      return res.status(400).json({ msg: "Passwords do not match" });
+    }
+
+    // Hash the password before saving to the database
+    const hashedPassword = await bcrypt.hash(password, 10); // 10 is the salt rounds
+
+    // Create a new user object without confirmPassword
+    const user = new Users({ email, username, password: hashedPassword });
+
+    // Save the user to the database
     await user.save();
+
     res.status(200).json({ msg: "User saved in DB successfully" });
   } catch (err) {
+    console.error(err); // Log the error for debugging
     res.status(500).json({ msg: "Internal server error" });
   }
 });
