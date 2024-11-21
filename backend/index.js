@@ -31,9 +31,10 @@ app.post("/signup", async (req, res) => {
   try {
     const { email, username, password, confirmPassword } = req.body;
     console.log(email);
-    const existingUser = await Users.findOne({ username });
-    console.log(existingUser);
-    if (existingUser) {
+    const existingUsername = await Users.findOne({ username });
+    const existingEmail = await Users.findOne({ email });
+    console.log(existingUsername);
+    if (existingUsername || existingEmail) {
       return res.status(409).json({ msg: "User already exists" });
     }
 
@@ -43,21 +44,6 @@ app.post("/signup", async (req, res) => {
   } catch (err) {
     res.status(500).json({ msg: "Internal server error" });
   }
-});
-
-// POST route to handle signup
-app.post("/authsignup", async (req, res) => {
-  const { name, username, password } = req.body;
-
-  const existingUser = await Users.findOne({ username });
-
-  if (existingUser) {
-    return res.status(409).json({ msg: "User already exists" });
-  }
-
-  const user = new Users({ name, username, password });
-  await user.save();
-  res.status(200).json({ msg: "User saved in DB successfully" });
 });
 
 // app.post("/login", async (req, res) => {
@@ -83,7 +69,7 @@ app.post("/authlogin", async (req, res) => {
     const existingUser = await Users.findOne({ username: req.body.username });
 
     // If user is not found, send 401 Unauthorized with a message
-    if (!existingUser) {
+    if (!existingUser || existingUser.password !== req.body.password) {
       return res.status(401).json({ msg: "Invalid credentials" });
     }
 
