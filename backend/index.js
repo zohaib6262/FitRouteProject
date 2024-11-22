@@ -62,31 +62,20 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// app.post("/login", async (req, res) => {
-//   const { username, password } = req.body;
-//   console.log(username, password);
-//   const existingUser = await Users.findOne({ username });
-
-//   console.log("exiting User", existingUser);
-//   if (!existingUser) {
-//     return res.status(401).json({ msg: "Invalid credentials" });
-//   }
-//   // if (existingUser && existingUser.password === password) {
-//   const token = jwt.sign({ username }, jwtPassword);
-//   return res.json({ token });
-//   // }
-// });
-
-// Use bcrypt for password hashing
-
 app.post("/authlogin", async (req, res) => {
   try {
-    // Find user by username
     const existingUser = await Users.findOne({ username: req.body.username });
 
-    // If user is not found, send 401 Unauthorized with a message
-    if (!existingUser || existingUser.password !== req.body.password) {
-      return res.status(401).json({ msg: "Invalid credentials" });
+    if (!existingUser) {
+      return res.status(401).json({ msg: "Invalid username or password" });
+    }
+
+    const isPasswordMatch = await bcrypt.compare(
+      req.body.password,
+      existingUser.password
+    );
+    if (!isPasswordMatch) {
+      return res.status(401).json({ msg: "Invalid username or password" });
     }
 
     // Generate token using the user's username (or any other identifier)
