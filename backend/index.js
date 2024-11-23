@@ -66,11 +66,15 @@ app.post("/authlogin", async (req, res) => {
   try {
     const existingUser = await Users.findOne({ username: req.body.username });
 
-    const isPasswordMatch = bcrypt.compare(
+    if (!existingUser) {
+      return res.status(401).json({ msg: "Invalid username or password" });
+    }
+
+    const isPasswordMatch = await bcrypt.compare(
       req.body.password,
       existingUser.password
     );
-    if (!existingUser || !isPasswordMatch) {
+    if (!isPasswordMatch) {
       return res.status(401).json({ msg: "Invalid username or password" });
     }
 
